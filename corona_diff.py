@@ -5,6 +5,8 @@ Created on Mon Mar 30 13:05:45 2020
 
 @author: paul
 """
+# A SIR model for the spread of Covid-19 virus
+
 import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
