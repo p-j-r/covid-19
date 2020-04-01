@@ -10,37 +10,41 @@ from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 from pylab import *
 
-N=3500      # Initial population
-I=1         # Initially 3 infected people
+N=10000      # Initial population
+I=1         # Initially infected people
 R=0         # 0 Recovered
 S=N-I-R     # Susceptible (N=S+I+R)
 
+beta=4.5         # Rate of infection
+gamma=.5           # Rate of recovery
+    
 
-T=1       # Time-play
+T=14       # Time-play
 
-def SIR(vals,t ):
+def SIR(vals,t,b,g):
     S,I,R=vals
-    b=20.1         # Rate of infection
-    g=1.5           # Rate of recovery
     
     dS=-b*S*I/N     # dS/dt
-    dI=b*S*I/N + g*I
+    dI=b*S*I/N - g*I
     dR=g*I
     
     return [dS,dI,dR]
 
     
 t=np.linspace(0,T,1000)
-x=[S,I,R]
-sol=odeint(SIR,x,t)
+x=[S,I,R]           # Initial params
+rates=(beta,gamma)
+sol=odeint(SIR,x,t,args=rates)
 
-
+# Plot ODE solutions
 plt.plot(t,sol[:,0])
 plt.plot(t,sol[:,1])
 plt.plot(t,sol[:,2])
 
-plt.xlabel('t')
+plt.xlabel('Time')
+plt.ylabel('Population')
 plt.legend(['S','I','R'],shadow=True)
 plt.title('COVID')
 plt.draw()
-savefig("/home/paul/Documents/"+"difff.png",dpi=400)
+savefig("/home/paul/Documents/COVID/"+"diff_b"+str(beta)+"_g"+str(gamma)+".png",dpi=400)
+
