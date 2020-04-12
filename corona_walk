@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Apr 11 17:34:35 2020
+
+@author: paul
+"""
+
+import networkx as nx
+import numpy as np
+import matplotlib.pyplot as plt
+from random import randrange
+
+
+m,n=8,16    
+#N=m*n       # Lattice size
+M=400      # Number of random walkers
+L=20        # Lifetime params
+max_iter=10000
+
+Lat=nx.grid_2d_graph(m,n)
+nodes=[]
+for i in Lat.nodes():
+    nodes.append(i)
+nx.set_node_attributes(Lat,0,'infected')        # Sets the attribute infected, the number of infected peeps at a node at any temporal point 
+nx.set_node_attributes(Lat,[],'walkers')         # Sets the attribute walkers, the walkers at a node
+
+x,y=np.zeros(M), np.zeros(M)    # walker x,y coord
+infect=np.zeros(M)              # walker health status
+lifespan=L*np.ones(M)            # Time left to live
+ts_sick=np.zeros(max_iter)      # time series of sick walkers
+#ts_dead=np.zeros(max_iter)
+for j in range(M):              # place walkers on lattice
+    
+    ( x[j] , y[j] )= nodes[randrange(len(nodes))]
+    Lat.nodes[ (x[j],y[j]) ]['walkers'].append(j)       # add this walker at node 
+    
+##print(nx.get_node_attributes(Lat,'walkers'))    
+# infect a random walker
+nx,ny= nodes[randrange(len(nodes))] 
+temp=Lat.nodes[(nx,ny)]['walkers']
+first_case=temp[randrange(len(temp))]   
+infect[first_case]=1
+Lat.nodes[(nx,ny)]['infected']+=1
+
+
+sick,dead,iterate=1,0,0     # counters
+neighbors=[]      # Store the neighbors here 
+
+while(sick>0) and (iterate < max_iter):
+    for j in range(0,M):
+        
+        
+        if infect[j]<2:     #still alive
+            for i in Lat.neighbors( (x[j],y[j]) ):
+                neighbors.append(i)
+                
+            # remove a walker from node!
+            Lat.nodes[(x[j],y[j])]['walkers'].remove(j)
+                
+            ( x[j] , y[j] )=neighbors[randrange(len(neighbors))]
+            # add him to the new node!
+            Lat.nodes[(x[j],y[j])]['walkers'].append(j)
+            
+            
+        if infect[j]==1:    #sick
+            lifespan[j]-=1
+            Lat.nodes[(x[j],y[j])]['infected']+=1           # so this guy is infected!
+            
+            if lifespan[j]<=0:  #go die!
+                infect[j]=2
+                sick-=1
+                dead+=1
+                
+                Lat.nodes[(x[j],y[j])]['walkers'].remove(j)
+                # 'infected' attribute is not updated as it gives the count of infected people at a hotspot. Going dead doesn't change that
+                # Maybe a new attribute for people dying in a location would be great!
+             
+            
+            for k in Lat.nodes[(x[j],y[j])]['walkers'] :        ##!
+                if infect[k]==0 and k!=j: # healthy guy
+                    infect[k]=1     # infect him!
+                    sick+=1
+                    Lat.nodes[(x[j],y[j])]['infected']+=1
+                        
+        neighbors.clear()
+                        
+    ts_sick[iterate]=sick
+#    ts_dead[iterate]=dead
+    iterate+=1  
+    # print
+    
+plt.scatter(range(0,iterate+10),ts_sick[0:iterate+10])
+#plt.plot(range(0,iterate+10),ts_dead[0:iterate+10])
+
+plt.show()
+                  
+    
+                    
+            
+    
+
