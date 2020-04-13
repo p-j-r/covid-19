@@ -13,8 +13,8 @@ Stochastic simulation: [corona_stochastic](https://github.com/p-j-r/covid-19/blo
 
 SIR- Age Structure & Social contact based
 ---------------
-I- Both symptomatic & asymptomatic
-The age and social contact data that is needed to construct structured compartment models can be found at the following source:
+I- Both symptomatic & asymptomatic   
+The age and social contact data for India that is needed to construct structured compartment models can be found at the following source:
 
 Age Structure & Contact Matrices: [data](https://github.com/p-j-r/pyross/tree/master/examples/data)   
 Research Paper: https://arxiv.org/pdf/2003.12055.pdf
