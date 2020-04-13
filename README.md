@@ -1,11 +1,30 @@
-**SIR** model for the spread of SARS-CoV-2 (novel coronavirus) is currently implemented.
+# Models
 
-The age and social contact data that is needed to construct structured compartment models can be found at the following sources:
+The following epidemiological models for the spread of SARS-CoV-2 (novel coronavirus) have been implemented:  
+  
+    
+SIR- Stochastic
+------
 
-Age structure: Population Pyramid website.
+Using Gillespie algorithm a basic SIR model is generated.  
+Differential equation solution: [corona_diff](https://github.com/p-j-r/covid-19/blob/master/corona_diff.py)  
+Stochastic simulation: [corona_stochastic](https://github.com/p-j-r/covid-19/blob/master/corona_stochastic.py)  
 
-Contact structure: Projecting social contact matrices in 152 countries using contact surveys and demographic data, Kiesha Prem, Alex R. Cook, Mark Jit, PLOS Computational Biology, (2017) DOI, Supporting Information Text and Supporting Information Data.
-The stochastic model for this has been added too!
 
+SIR- Age Structure & Social contact based
+---------------
+
+The age and social contact data that is needed to construct structured compartment models can be found at the following source:
+
+Age Structure & Contact Matrices: [data](https://github.com/p-j-r/pyross/tree/master/examples/data)   
 Research Paper: https://arxiv.org/pdf/2003.12055.pdf
+   
+[Source-code](https://github.com/p-j-r/covid-19/blob/master/SIR_model_India.py)
+
+
+
+[Hotspots & Contact Tracing model](https://github.com/p-j-r/covid-19/blob/master/corona_walk)
+----------------
+
+Uses [networkX](https://networkx.github.io/documentation/networkx-1.10/overview.html) package and modelling the disease spread as a [lattice](https://networkx.github.io/documentation/networkx-1.10/reference/generated/networkx.generators.classic.grid_2d_graph.html#networkx.generators.classic.grid_2d_graph), providing a way to identify and isolate the Hotspots.
 
