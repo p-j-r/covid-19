@@ -10,20 +10,24 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 from random import randrange
+from pylab import savefig
 
-
-m,n=8,16    
+m,n=8,160    
 #N=m*n       # Lattice size
-M=400      # Number of random walkers
+M=4000      # Number of random walkers
 L=20        # Lifetime params
 max_iter=10000
 
 Lat=nx.grid_2d_graph(m,n)
 nodes=[]
+walkers={}
 for i in Lat.nodes():
     nodes.append(i)
+    walkers[i]=[]
+    
+
 nx.set_node_attributes(Lat,0,'infected')        # Sets the attribute infected, the number of infected peeps at a node at any temporal point 
-nx.set_node_attributes(Lat,[],'walkers')         # Sets the attribute walkers, the walkers at a node
+nx.set_node_attributes(Lat,walkers,'walkers')         # Sets the attribute walkers, the walkers at a node
 
 x,y=np.zeros(M), np.zeros(M)    # walker x,y coord
 infect=np.zeros(M)              # walker health status
@@ -33,12 +37,13 @@ ts_sick=np.zeros(max_iter)      # time series of sick walkers
 for j in range(M):              # place walkers on lattice
     
     ( x[j] , y[j] )= nodes[randrange(len(nodes))]
-    Lat.nodes[ (x[j],y[j]) ]['walkers'].append(j)       # add this walker at node 
+    Lat.nodes[ (x[j],y[j]) ]['walkers'].append(j)       # add this walker at node
+    
     
 ##print(nx.get_node_attributes(Lat,'walkers'))    
 # infect a random walker
 nx,ny= nodes[randrange(len(nodes))] 
-temp=Lat.nodes[(nx,ny)]['walkers']
+temp=Lat.nodes[(nx,ny)]['walkers']          # may be empty if nodes>walkers....!
 first_case=temp[randrange(len(temp))]   
 infect[first_case]=1
 Lat.nodes[(nx,ny)]['infected']+=1
@@ -72,7 +77,7 @@ while(sick>0) and (iterate < max_iter):
                 sick-=1
                 dead+=1
                 
-                Lat.nodes[(x[j],y[j])]['walkers'].remove(j)
+                #Lat.nodes[(x[j],y[j])]['walkers'].remove(j)
                 # 'infected' attribute is not updated as it gives the count of infected people at a hotspot. Going dead doesn't change that
                 # Maybe a new attribute for people dying in a location would be great!
              
@@ -92,6 +97,8 @@ while(sick>0) and (iterate < max_iter):
     
 plt.scatter(range(0,iterate+10),ts_sick[0:iterate+10])
 #plt.plot(range(0,iterate+10),ts_dead[0:iterate+10])
+
+savefig("/home/paul/Documents/COVID/Lattice_model.png",dpi=400)
 
 plt.show()
                   
