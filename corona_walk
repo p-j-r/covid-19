@@ -12,10 +12,11 @@ import matplotlib.pyplot as plt
 from random import randrange
 from pylab import savefig
 
+
 m,n=8,160    
 #N=m*n       # Lattice size
 M=4000      # Number of random walkers
-L=20        # Lifetime params
+L=14       # Lifetime params
 max_iter=10000
 
 Lat=nx.grid_2d_graph(m,n)
@@ -42,11 +43,11 @@ for j in range(M):              # place walkers on lattice
     
 ##print(nx.get_node_attributes(Lat,'walkers'))    
 # infect a random walker
-nx,ny= nodes[randrange(len(nodes))] 
-temp=Lat.nodes[(nx,ny)]['walkers']          # may be empty if nodes>walkers....!
+cx,cy= nodes[randrange(len(nodes))] 
+temp=Lat.nodes[(cx,cy)]['walkers']          # may be empty if nodes>walkers....!
 first_case=temp[randrange(len(temp))]   
 infect[first_case]=1
-Lat.nodes[(nx,ny)]['infected']+=1
+Lat.nodes[(cx,cy)]['infected']+=1
 
 
 sick,dead,iterate=1,0,0     # counters
@@ -97,13 +98,9 @@ while(sick>0) and (iterate < max_iter):
     
 plt.scatter(range(0,iterate+10),ts_sick[0:iterate+10])
 #plt.plot(range(0,iterate+10),ts_dead[0:iterate+10])
-
+plt.ylabel('Sick people')
+plt.xlabel('Iterations')
 savefig("/home/paul/Documents/COVID/Lattice_model.png",dpi=400)
 
 plt.show()
                   
-    
-                    
-            
-    
-
