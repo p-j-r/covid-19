@@ -18,7 +18,7 @@ m,n=16,80
 M=400      # Number of random walkers
 L=20       # Lifetime params
 max_iter=10000      # in like discrete time-steps
-#steps=1 
+steps=10         # total number of times 
     
 sick, dead, iterate=0,0,0     # counters
 neighbors=[]      # Store the neighbors here 
@@ -39,6 +39,8 @@ infect=np.zeros(M)              # walker health status
 lifespan=L*np.ones(M)            # Time left to live
 ts_sick=np.zeros(max_iter)      # time series of sick walkers
 #ts_dead=np.zeros(max_iter)
+ts_ctr=np.zeros(max_iter)       # counter to record each iter for averaging
+iter_high=0                 # The max count of iter (it doesn't go on till max_iter)
 
 def place():            # place walkers on lattice
     for j in range(M):             
@@ -101,25 +103,39 @@ def actions(j):
                 global sick
                 sick+=1
                 Lat.nodes[(x[j],y[j])]['infected']+=1
+      
         
+def reset():
+    global sick,dead,iterate
+    sick,dead,iterate=0,0,0
+    
             
-#while(steps>0)            
-place()
-first_case()         
+while(steps>0):        
+    place()
+    first_case()         
 
-while(sick>0) and (iterate < max_iter):
-    for j in range(0,M):
+    while(sick>0) and (iterate < max_iter):
+        for j in range(0,M):
         
-        actions(j)
-        neighbors.clear()
+            actions(j)
+            neighbors.clear()
                         
-    ts_sick[iterate]=sick
-#    ts_dead[iterate]=dead
-    iterate+=1  
+        ts_sick[iterate]+=sick
+#        ts_dead[iterate]=dead
+        ts_ctr[iterate]+=1
+        iterate+=1 
+        
+    if (iterate>iter_high) :
+        iter_high=iterate
+    reset()
+    steps-=1
   
+# Averaging
+
+for i in range(iter_high):
+    ts_sick[i]/=ts_ctr[i]
     
-    
-plt.plot(range(0,iterate+10),ts_sick[0:iterate+10])
+plt.plot(range(0,iter_high+10),ts_sick[0:iter_high+10])
 #plt.plot(range(0,iterate+10),ts_dead[0:iterate+10])
 plt.ylabel('Sick people')
 plt.xlabel('Iterations')
