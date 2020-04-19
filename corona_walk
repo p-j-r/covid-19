@@ -18,7 +18,7 @@ m,n=16,80
 M=400      # Number of random walkers
 L=20       # Lifetime params
 max_iter=10000      # in like discrete time-steps
-steps=10         # total number of times 
+steps=1         # total number of times 
     
 sick, dead, iterate=0,0,0     # counters
 neighbors=[]      # Store the neighbors here 
