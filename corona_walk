@@ -13,12 +13,12 @@ from random import randrange
 from pylab import savefig
 
 
-m,n=16,80    
+m,n=100,100    
 #N=m*n       # Lattice size
-M=400      # Number of random walkers
+M=40000      # Number of random walkers
 L=20       # Lifetime params
 max_iter=10000      # in like discrete time-steps
-steps=1         # total number of times 
+steps=100         # total number of times 
     
 sick, dead, iterate=0,0,0     # counters
 neighbors=[]      # Store the neighbors here 
@@ -52,9 +52,13 @@ def place():            # place walkers on lattice
     
 
 def first_case():       # infect a random walker
-    cx,cy= nodes[randrange(len(nodes))] 
-    temp=Lat.nodes[(cx,cy)]['walkers']          # may be empty if nodes>walkers....! So empty range Error
-    # Modify this? So that randrange() doesn't go empty [Actually that too would be just a random phenomena]
+    
+    while(True):
+        cx,cy= nodes[randrange(len(nodes))]     
+        temp=Lat.nodes[(cx,cy)]['walkers']          # may be empty if nodes>walkers....! So empty range Error
+        if (len(temp)!=0):
+            break
+    
     first_case=temp[randrange(len(temp))]   
     infect[first_case]=1
     Lat.nodes[(cx,cy)]['infected']+=1
@@ -137,8 +141,8 @@ for i in range(iter_high):
     
 plt.plot(range(0,iter_high+10),ts_sick[0:iter_high+10])
 #plt.plot(range(0,iterate+10),ts_dead[0:iterate+10])
-plt.ylabel('Sick people')
-plt.xlabel('Iterations')
+plt.ylabel('Infected')
+plt.xlabel('Discrete Time steps')
 savefig("/home/paul/Documents/COVID/Lattice_model.png",dpi=400)
 
 plt.show()
