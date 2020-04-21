@@ -29,3 +29,4 @@ Research Paper: https://arxiv.org/pdf/2003.12055.pdf
 Uses [networkX](https://networkx.github.io/documentation/networkx-1.10/overview.html) package and modelling the disease spread as a [lattice](https://networkx.github.io/documentation/networkx-1.10/reference/generated/networkx.generators.classic.grid_2d_graph.html#networkx.generators.classic.grid_2d_graph), providing a way to identify and isolate the Hotspots.
 
 ![Sick people](https://github.com/p-j-r/covid-19/blob/master/results/Lattice_model.png)
+![Averaged](https://github.com/p-j-r/covid-19/blob/master/results/Lattice_model__Averaged.png)
