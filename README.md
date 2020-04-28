@@ -9,6 +9,7 @@ SIR- Stochastic
 Using Gillespie algorithm a basic SIR model is generated.  
 Differential equation solution: [corona_diff](https://github.com/p-j-r/covid-19/blob/master/corona_diff.py)  
 Stochastic simulation: [corona_stochastic](https://github.com/p-j-r/covid-19/blob/master/corona_stochastic.py)  
+![stochastic](https://github.com/p-j-r/covid-19/blob/master/results/sim_b0.6671291_g0.332871.png)
 
 
 SIR- Age Structure & Social contact based
