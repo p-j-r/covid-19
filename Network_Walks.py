@@ -14,7 +14,7 @@ from random import randrange,randint,uniform
 from pylab import savefig
 import time
 
-"Adapts corona_walk into a class, to create a net of lattices connected by small-world networks"
+"Adapts corona_walk into a class, to create a net of clusters (lattices) connected by Multigraph network"
  
 
 class Cluster:
@@ -25,8 +25,8 @@ class Cluster:
     L=20       # Lifetime params
     max_iter=1000      # in like discrete time-steps
     
-    steps=10         # total number of times 
-    ## DOES THIS COMPLICATE?
+    #steps=1         # total number of times 
+    ## DOES THIS COMPLICATE? Make this run just once!
     
     neighbors=[]      # Store the neighbors here 
     nodes=[]
@@ -74,8 +74,10 @@ class Cluster:
         self.lifespan=self.L*np.ones(self.W)            # Time left to live
         self.ts_sick=np.zeros(self.max_iter)      # time series of sick walkers
         #ts_dead=np.zeros(max_iter)
-        self.ts_ctr=np.zeros(self.max_iter)       # counter to record each iter for averaging
-        self.iter_high=0                 # The max count of iter (it doesn't go on till max_iter)
+        
+        
+        #self.ts_ctr=np.zeros(self.max_iter)       # counter to record each iter for averaging
+        #self.iter_high=0                 # The max count of iter (it doesn't go on till max_iter)
         
         
         
@@ -164,35 +166,36 @@ class Cluster:
     def cluster_controller(self):
         " Overlook the happenings in an individual Cluster"
     
-        while(self.steps>0):   
-            self.place()
-            self.first_case()         
+        #while(self.steps>0):   
+        self.place()
+        self.first_case()         
 
-            while(self.sick>0) and (self.iterate < self.max_iter):
-                for j in range(0,self.W):
+        while(self.sick>0) and (self.iterate < self.max_iter):
+            for j in range(0,self.W):
         
-                    self.actions(j)
-                    self.neighbors.clear()
+                self.actions(j)
+                self.neighbors.clear()
                         
-                self.ts_sick[self.iterate]+=self.sick
-                #        ts_dead[iterate]=dead
-                self.ts_ctr[self.iterate]+=1
-                self.iterate+=1 
+            self.ts_sick[self.iterate]+=self.sick
+            #        ts_dead[iterate]=dead
+            #self.ts_ctr[self.iterate]+=1
+            self.iterate+=1 
         
-            if (self.iterate>self.iter_high) :
-                self.iter_high=self.iterate
-                self.reset()
-                self.steps-=1
+        #if (self.iterate>self.iter_high) :
+            #print(self.iter_high)
+            #self.iter_high=self.iterate
+            #self.reset()
+            #self.steps-=1
   
         # Averaging
 
-        for i in range(self.iter_high):
-            self.ts_sick[i]/=self.ts_ctr[i]
+        #for i in range(self.iter_high):
+            #self.ts_sick[i]/=self.ts_ctr[i]
 
 
     def plot(self): # You might want to mod this!
         " Plot each cluster data"
-        plt.plot(range(0,self.iter_high+10),self.ts_sick[0:self.iter_high+10])
+        plt.plot(range(0,self.iterate+10),self.ts_sick[0:self.iterate+10])
         #plt.plot(range(0,iterate+10),ts_dead[0:iterate+10])
         plt.ylabel('Infected')
         plt.xlabel('Discrete Time steps')
@@ -213,3 +216,5 @@ c1.plot()
  
 elapsed_time=time.time()-start_time
 print( time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) )
+
+
