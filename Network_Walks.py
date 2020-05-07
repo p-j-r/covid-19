@@ -10,20 +10,33 @@ Created on Sun May  3 12:31:24 2020
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-from random import randrange,randint,uniform
+from random import randrange,uniform
 from pylab import savefig
-import time
 
 "Adapts corona_walk into a class, to create a net of clusters (lattices) connected by Multigraph network"
+ # I think epydemic is there too! But couldn't get it at first go... :)
  
+
+
+
+# Global events...
+max_timescale=1000
+#g_sick, g_dead, g_iterate=0,0,0     # counters
+global_sick=np.zeros(max_timescale)      # time series of sick walkers
+
+
+
+
+
+
 
 class Cluster:
     
     " This creates a lattice of random size (m*n) which models any population cluster: big, small, cities, villages, etc."
     
-    max_size=100  
+    
     L=20       # Lifetime params
-    max_iter=1000      # in like discrete time-steps
+    #max_iter=1000      # in like discrete time-steps
     
     #steps=1         # total number of times 
     ## DOES THIS COMPLICATE? Make this run just once!
@@ -31,18 +44,29 @@ class Cluster:
     neighbors=[]      # Store the neighbors here 
     nodes=[]
     walkers={}
-
-    def __init__(self):
+    
+    
+    n_clusters=0        # (Total number of clusters)-1
+    
+    total_sick=0
+    total_dead=0
+    
+    def __init__(self, length, width, time_steps, t_gen, density=uniform(1.4,1.6), Lifetime=20 ):
         
-        self.cluster_id=0   
-        ### GET AN ID!!!
+        " Generating the length & width randomly helps to create diverse clusters in any random-walk"
         
-        self.m=randint(self.max_size/2,self.max_size)     # self?: Do length & breadth interest us?
-        self.n=randint(self.max_size/2,self.max_size)
+        self.cluster_id=Cluster.n_clusters      # Each cluster has a cluster-id
+        self.t_gen=t_gen        # time of generation of this cluster!
+        # t = t' + t_gen
+        self.t_p=0      # t'
+        
+        self.m=length     # self?: Do length & breadth interest us?
+        self.n=width
         
         self.N=self.m*self.n      # Lattice size
-        self.density=uniform(.4,.6)       # Density per node!
+        self.density=density       # Density per node!
         # Social-distancing affects density!!!
+        # HOW??? DENSITY DOESN'T HAVE MUCH OF A ROLL BEYOND POPU. INSTANTIATION!!!
         
         # A node represents a point in the cluster where walkers are free to go!
         # shops, malls, etc,etc...
@@ -72,13 +96,14 @@ class Cluster:
         self.x, self.y=np.zeros(self.W), np.zeros(self.W)    # walker x,y coord
         self.infect=np.zeros(self.W)              # walker health status
         self.lifespan=self.L*np.ones(self.W)            # Time left to live
-        self.ts_sick=np.zeros(self.max_iter)      # time series of sick walkers
+        self.ts_sick=np.zeros(time_steps)      # time series of sick walkers
         #ts_dead=np.zeros(max_iter)
         
         
         #self.ts_ctr=np.zeros(self.max_iter)       # counter to record each iter for averaging
         #self.iter_high=0                 # The max count of iter (it doesn't go on till max_iter)
         
+        Cluster.n_clusters+=1
         
         
     
@@ -105,6 +130,9 @@ class Cluster:
         self.infect[first_case]=1
         self.Lat.nodes[(cx,cy)]['infected']+=1
         self.sick=1
+        
+        ##???
+        Cluster.total_sick+=1
             
         
     def walk(self,j):         
@@ -127,6 +155,9 @@ class Cluster:
         self.infect[j]=2
         self.sick-=1
         self.dead+=1
+        
+        Cluster.total_sick-=1
+        Cluster.total_dead+=1
                 
         self.Lat.nodes[(self.x[j],self.y[j])]['walkers'].remove(j)
         # 'infected' attribute is not updated as it gives the count of infected people at a hotspot. Going dead doesn't change that
@@ -153,6 +184,9 @@ class Cluster:
                     self.infect[k]=1     # infect him!
                 
                     self.sick+=1
+                    
+                    Cluster.total_sick+=1
+                    
                     self.Lat.nodes[(self.x[j],self.y[j])]['infected']+=1
                         
                         
@@ -163,23 +197,30 @@ class Cluster:
         self.sick,self.dead,self.iterate=0,0,0
     
     
-    def cluster_controller(self):
+    def initialise(self):
         " Overlook the happenings in an individual Cluster"
     
         #while(self.steps>0):   
         self.place()
         self.first_case()         
 
-        while(self.sick>0) and (self.iterate < self.max_iter):
-            for j in range(0,self.W):
+        #while(self.sick>0) and (self.iterate < self.max_iter):
         
-                self.actions(j)
-                self.neighbors.clear()
+        
+    def cluster_controller(self):
+        for j in range(0,self.W):
+        
+            self.actions(j)
+            self.neighbors.clear()
                         
-            self.ts_sick[self.iterate]+=self.sick
-            #        ts_dead[iterate]=dead
-            #self.ts_ctr[self.iterate]+=1
-            self.iterate+=1 
+        self.ts_sick[self.t_p]+=self.sick
+        #        ts_dead[iterate]=dead
+        #self.ts_ctr[self.iterate]+=1
+        
+        self.t_p+=1
+        #self.iterate+=1 
+        #??? Updating depends not on Cluster!!!
+        
         
         #if (self.iterate>self.iter_high) :
             #print(self.iter_high)
@@ -195,7 +236,7 @@ class Cluster:
 
     def plot(self): # You might want to mod this!
         " Plot each cluster data"
-        plt.plot(range(0,self.iterate+10),self.ts_sick[0:self.iterate+10])
+        plt.plot(range(0,self.t_p+10),self.ts_sick[0:self.t_p+10])
         #plt.plot(range(0,iterate+10),ts_dead[0:iterate+10])
         plt.ylabel('Infected')
         plt.xlabel('Discrete Time steps')
@@ -204,17 +245,31 @@ class Cluster:
 
         #plt.show()
                   
+    
+    def show_cluster(self):
+        nx.draw(self.Lat)
+        savefig("/home/paul/Documents/COVID/Networks/cluster_view.png",dpi=800)
 
 
+t=0
+#start_time=time.time()
+time_max=1000
+c1=Cluster(50,50,time_max,t)
+c1.initialise()
 
+while(c1.sick>0):
+    
+    c1.cluster_controller()
 
-start_time=time.time()
-
-c1=Cluster()
-c1.cluster_controller()
+    
+    t+=1
+    
 c1.plot()
+#c1.show_cluster()    
  
-elapsed_time=time.time()-start_time
-print( time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) )
+#elapsed_time=time.time()-start_time
+#print( time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) )
 
 
+" Okayy! the crooked graph is coz u removed time"
+" From the cluster_controller()"
