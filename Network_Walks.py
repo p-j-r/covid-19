@@ -10,22 +10,35 @@ Created on Sun May  3 12:31:24 2020
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-from random import randrange,uniform
+from random import randrange,uniform,randint
 from pylab import savefig
-
+import time
 "Adapts corona_walk into a class, to create a net of clusters (lattices) connected by Multigraph network"
- # I think epydemic is there too! But couldn't get it at first go... :)
  
 
-
-
 # Global events...
-max_timescale=1000
-#g_sick, g_dead, g_iterate=0,0,0     # counters
+max_timescale=5000
 global_sick=np.zeros(max_timescale)      # time series of sick walkers
 
 
 
+max_clusters=15
+
+transfer_infect={}      # monitors the infected tranferred b/w nodes
+G=nx.Graph()
+spam=0
+max_size=100        # choose even
+
+def spawn_cluster(t,n):
+    
+    l=randint(max_size/2,max_size)
+    b=randint(max_size/2,max_size)
+    G.add_node(Cluster(l,b,max_timescale,t))
+    
+    list(G.nodes)[n].initialise()
+    
+    #global spam
+    #spam+=1
 
 
 
@@ -36,24 +49,22 @@ class Cluster:
     
     
     L=20       # Lifetime params
-    #max_iter=1000      # in like discrete time-steps
-    
-    #steps=1         # total number of times 
-    ## DOES THIS COMPLICATE? Make this run just once!
-    
-    neighbors=[]      # Store the neighbors here 
-    nodes=[]
-    walkers={}
     
     
-    n_clusters=0        # (Total number of clusters)-1
     
+    n_clusters=0        # (Total number of clusters)
+    
+    total_population=0
     total_sick=0
     total_dead=0
+    total_sick_series=np.zeros(max_timescale)     # Global sick series!
+    cluster_health=np.zeros(max_clusters)       # 0-> infection starts & is ongoing, 1->infection over!
     
-    def __init__(self, length, width, time_steps, t_gen, density=uniform(1.4,1.6), Lifetime=20 ):
+    
+    def __init__(self, length, width, time_steps, t_gen, density=uniform(0.4,0.6), Lifetime=20 ):
         
         " Generating the length & width randomly helps to create diverse clusters in any random-walk"
+        Cluster.n_clusters+=1
         
         self.cluster_id=Cluster.n_clusters      # Each cluster has a cluster-id
         self.t_gen=t_gen        # time of generation of this cluster!
@@ -73,11 +84,17 @@ class Cluster:
         # 'density' means the intial average number of people per node!
         
         self.W=int(self.density*self.N)       # Number of random walkers
+        Cluster.total_population+=self.W
+        
         self.sick, self.dead, self.iterate=0,0,0     # counters
     
     
         self.Lat=nx.grid_2d_graph(self.m,self.n)       # A 2-D Lattice
         
+        self.neighbors=[]      # Store the neighbors here 
+        self.nodes=[]
+        self.walkers={}
+    
         for i in self.Lat.nodes():
             self.nodes.append(i)
             self.walkers[i]=[]
@@ -86,7 +103,7 @@ class Cluster:
         nx.set_node_attributes(self.Lat,self.walkers,'walkers')         # Sets the attribute walkers, the walkers at a node
 
         # 2: One of the nodes will be the 'exit node' for the lattice...{A small world of all exit-nodes}
-        self.exit_node=self.nodes[randrange(len(self.nodes))]       # Look after this!?
+        self.exit_node=self.nodes[randrange(len(self.nodes))]       # Should a cluster have multiple exits!?
         
         
         
@@ -100,22 +117,21 @@ class Cluster:
         #ts_dead=np.zeros(max_iter)
         
         
-        #self.ts_ctr=np.zeros(self.max_iter)       # counter to record each iter for averaging
-        #self.iter_high=0                 # The max count of iter (it doesn't go on till max_iter)
-        
-        Cluster.n_clusters+=1
         
         
-    
-    
+        
     
     def place(self):            
         "Place walkers on lattice"
-            
+        #print(self.nodes)     
         for j in range(self.W):                   
-            ( self.x[j] , self.y[j] )= self.nodes[randrange(len(self.nodes))]
+            self.x[j] , self.y[j]= self.nodes[randrange(len(self.nodes))]
+            #print(self.Lat.nodes[ (self.x[j],self.y[j]) ]['walkers']   )
+            #print(( self.x[j] , self.y[j] ))
             self.Lat.nodes[ (self.x[j],self.y[j]) ]['walkers'].append(j)       # add this walker at node
-    
+            
+            
+        
     
     def first_case(self):        
         "Infect a random walker" 
@@ -131,9 +147,31 @@ class Cluster:
         self.Lat.nodes[(cx,cy)]['infected']+=1
         self.sick=1
         
-        ##???
+        
         Cluster.total_sick+=1
-            
+        
+     
+        
+    def exit_node_handler(self,j):
+        
+        global spam
+        spam+=1
+        where=randint(1,Cluster.n_clusters)
+        if(where==self.cluster_id and Cluster.n_clusters!= max_clusters):     # Self-loops aren't allowed: 0 cluster is covered
+            spawn_cluster(self.t_gen+self.t_p,Cluster.n_clusters)
+            G.add_edge( list(G.nodes)[self.cluster_id-1], list(G.nodes)[Cluster.n_clusters-1] )
+            where=Cluster.n_clusters
+                
+                
+        else:
+            G.add_edge( list(G.nodes)[self.cluster_id-1], list(G.nodes)[where-1] )
+                
+        list(G.nodes)[where-1].Lat.nodes[ list(G.nodes)[where-1].exit_node ]['walkers'].append(j)     # Can duplicate id's exist!?   
+        if (self.infect[j]==1):     # sick!
+            pass
+        
+        
+        self.infect[j]=3    # Removed from this cluster!
         
     def walk(self,j):         
         "Walk the walker to a new location"
@@ -142,10 +180,17 @@ class Cluster:
                 self.neighbors.append(i)
               
         # remove a walker from node!
-        self.Lat.nodes[(self.x[j],self.y[j])]['walkers'].remove(j)               
-        ( self.x[j] , self.y[j] )=self.neighbors[randrange(len(self.neighbors))]
-        # add him to the new node!
-        self.Lat.nodes[(self.x[j],self.y[j])]['walkers'].append(j)
+        self.Lat.nodes[(self.x[j],self.y[j])]['walkers'].remove(j)     
+          
+        self.x[j] , self.y[j] =self.neighbors[randrange(len(self.neighbors))]
+        
+        
+        if( ( self.x[j] , self.y[j] ) == self.exit_node):
+            self.exit_node_handler(j)
+             
+        else:
+            # add him to the new node!        
+            self.Lat.nodes[(self.x[j],self.y[j])]['walkers'].append(j)
 
     
 
@@ -197,79 +242,97 @@ class Cluster:
         self.sick,self.dead,self.iterate=0,0,0
     
     
+    
     def initialise(self):
         " Overlook the happenings in an individual Cluster"
     
-        #while(self.steps>0):   
         self.place()
         self.first_case()         
 
-        #while(self.sick>0) and (self.iterate < self.max_iter):
         
         
     def cluster_controller(self):
+        
+        if(Cluster.cluster_health[self.cluster_id-1]==1):
+            return
         for j in range(0,self.W):
         
             self.actions(j)
             self.neighbors.clear()
                         
         self.ts_sick[self.t_p]+=self.sick
+        Cluster.total_sick_series[ (self.t_p + self.t_gen) ] +=self.sick
         #        ts_dead[iterate]=dead
-        #self.ts_ctr[self.iterate]+=1
         
         self.t_p+=1
-        #self.iterate+=1 
-        #??? Updating depends not on Cluster!!!
         
+        if(self.sick==0):   # Infection over!
+            self.plot()
+            Cluster.cluster_health[self.cluster_id-1]=1 # Over!
+            
         
-        #if (self.iterate>self.iter_high) :
-            #print(self.iter_high)
-            #self.iter_high=self.iterate
-            #self.reset()
-            #self.steps-=1
-  
-        # Averaging
-
-        #for i in range(self.iter_high):
-            #self.ts_sick[i]/=self.ts_ctr[i]
-
 
     def plot(self): # You might want to mod this!
         " Plot each cluster data"
-        plt.plot(range(0,self.t_p+10),self.ts_sick[0:self.t_p+10])
+        
+        #self.figure=plt.figure()
+        x=np.array(range(0,self.t_p))+self.t_gen
+        y=np.array(self.ts_sick[0:self.t_p])
+        
+        plt.plot(x,y)
         #plt.plot(range(0,iterate+10),ts_dead[0:iterate+10])
+        plt.axhline(y=self.W,linestyle='--')
         plt.ylabel('Infected')
         plt.xlabel('Discrete Time steps')
         plt.title("Cluster-"+str(self.cluster_id))
-        savefig("/home/paul/Documents/COVID/Networks/Cluster"+str(self.cluster_id)+".png",dpi=400)
-
+        plt.savefig("/home/paul/Documents/COVID/Networks/Cluster"+str(self.cluster_id)+".png",dpi=400)
+        plt.clf()
         #plt.show()
                   
     
     def show_cluster(self):
         nx.draw(self.Lat)
         savefig("/home/paul/Documents/COVID/Networks/cluster_view.png",dpi=800)
+        plt.clf()
+        
+        
+        
+    def global_plot(t):     # Global stats are simply sum of individual cluster stats!
+        
+        plt.plot(range(0,t),Cluster.total_sick_series[0:t])
+        #plt.plot(range(0,iterate+10),ts_dead[0:iterate+10])
+        plt.axhline(y=Cluster.total_population,linestyle='--')
+        plt.ylabel('Infected')
+        plt.xlabel('Discrete Time steps')
+        plt.title("Global data")
+        savefig("/home/paul/Documents/COVID/Networks/Global.png",dpi=400)
+        plt.clf()
 
 
 t=0
-#start_time=time.time()
-time_max=1000
-c1=Cluster(50,50,time_max,t)
-c1.initialise()
 
-while(c1.sick>0):
+start_time=time.time()
+
+spawn_cluster(t,0)    # 1st cluster
+
+while(Cluster.total_sick>0 and t<max_timescale):
     
-    c1.cluster_controller()
+    for i in range(Cluster.n_clusters):
+        list(G.nodes)[i].cluster_controller()
 
     
     t+=1
+
+for i in range(Cluster.n_clusters):
+   
+    list(G.nodes)[i].plot()
     
-c1.plot()
-#c1.show_cluster()    
- 
-#elapsed_time=time.time()-start_time
-#print( time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) )
 
+Cluster.global_plot(t) 
 
-" Okayy! the crooked graph is coz u removed time"
-" From the cluster_controller()"
+nx.draw(G)
+savefig("/home/paul/Documents/COVID/Networks/Global_network.png",dpi=400)
+
+elapsed_time=time.time()-start_time
+print( time.strftime("%H:%M:%S", time.gmtime(elapsed_time)) )
+
