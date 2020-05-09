@@ -30,6 +30,7 @@ spam=0
 max_size=100        # choose even
 
 def spawn_cluster(t,n):
+    " Spawn a new object of class cluster"
     
     l=randint(max_size/2,max_size)
     b=randint(max_size/2,max_size)
@@ -157,18 +158,19 @@ class Cluster:
         global spam
         spam+=1
         where=randint(1,Cluster.n_clusters)
-        if(where==self.cluster_id and Cluster.n_clusters!= max_clusters):     # Self-loops aren't allowed: 0 cluster is covered
+        if(  where==self.cluster_id  and Cluster.n_clusters!= max_clusters):     # Self-loops aren't allowed: 0 cluster is covered
             spawn_cluster(self.t_gen+self.t_p,Cluster.n_clusters)
             G.add_edge( list(G.nodes)[self.cluster_id-1], list(G.nodes)[Cluster.n_clusters-1] )
             where=Cluster.n_clusters
-                
+            transfer_infect[ list(G.nodes)[self.cluster_id-1], list(G.nodes)[where-1] ]=0
                 
         else:
+            #if( not(G.has_edge(list(G.nodes)[self.cluster_id-1],list(G.nodes)[where-1]) ) ):
             G.add_edge( list(G.nodes)[self.cluster_id-1], list(G.nodes)[where-1] )
-                
+            if (self.infect[j]==1):     # sick!
+                transfer_infect[ list(G.nodes)[self.cluster_id-1], list(G.nodes)[where-1] ]+=1
+           
         list(G.nodes)[where-1].Lat.nodes[ list(G.nodes)[where-1].exit_node ]['walkers'].append(j)     # Can duplicate id's exist!?   
-        if (self.infect[j]==1):     # sick!
-            pass
         
         
         self.infect[j]=3    # Removed from this cluster!
@@ -327,9 +329,10 @@ for i in range(Cluster.n_clusters):
    
     list(G.nodes)[i].plot()
     
-
 Cluster.global_plot(t) 
 
+#nx.set_edge_attributes(G,transfer_infect)
+print(transfer_infect)
 nx.draw(G)
 savefig("/home/paul/Documents/COVID/Networks/Global_network.png",dpi=400)
 
