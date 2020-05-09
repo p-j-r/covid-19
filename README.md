@@ -5,7 +5,7 @@ The following epidemiological models for the spread of SARS-CoV-2 (novel coronav
 Agent based network random walks  
 -------------
 
-[Read more here!](https://github.com/p-j-r/covid-19/blob/master/pjr.pdf)
+PDF: [pjr.pdf](https://github.com/p-j-r/covid-19/blob/master/pjr.pdf)
 
 ![Network-G](https://github.com/p-j-r/covid-19/blob/master/results/Run-0/Global_network.png)
 
