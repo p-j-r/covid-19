@@ -1,7 +1,14 @@
 # Models
 
 The following epidemiological models for the spread of SARS-CoV-2 (novel coronavirus) have been implemented:  
-  
+
+Agent based network random walks  
+-------------
+
+[Read more here!](https://github.com/p-j-r/covid-19/blob/master/pjr.pdf)
+
+![Network-G](https://github.com/p-j-r/covid-19/blob/master/results/Run-0/Global_network.png)
+
     
 SIR- Stochastic
 ------
