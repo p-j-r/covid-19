@@ -7,7 +7,10 @@ Agent based network random walks
 
 PDF: [pjr.pdf](https://github.com/p-j-r/covid-19/blob/master/pjr.pdf)
 
-![Network-G](https://github.com/p-j-r/covid-19/blob/master/results/Run-0/Global_network.png)
+![Network-G](https://github.com/p-j-r/covid-19/blob/master/results/Run-8:%20Success!/Global_network.png)
+![Network-G_](https://github.com/p-j-r/covid-19/blob/master/results/Run-9:%20Success!/Global_network.png)
+
+Rate of adding of clusters:(It's random!) _Looks like a linear fit though!_
 
     
 SIR- Stochastic
