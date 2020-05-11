@@ -11,6 +11,7 @@ PDF: [pjr.pdf](https://github.com/p-j-r/covid-19/blob/master/pjr.pdf)
 ![Network-G_](https://github.com/p-j-r/covid-19/blob/master/results/Run-9:%20Success!/Global_network.png)
 
 Rate of adding of clusters:(It's random!) _Looks like a linear fit though!_
+![Rate](https://github.com/p-j-r/covid-19/blob/master/results/Run-9:%20Success!/rate.png)
 
     
 SIR- Stochastic
