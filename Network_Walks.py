@@ -13,21 +13,23 @@ import matplotlib.pyplot as plt
 from random import randrange,uniform,randint
 from pylab import savefig
 import time
+
+
 "Adapts corona_walk into a class, to create a net of clusters (lattices) connected by Multigraph network"
  
 
 # Global events...
-max_timescale=5000
+max_timescale=10000
 global_sick=np.zeros(max_timescale)      # time series of sick walkers
 
 
 
-max_clusters=15
+max_clusters=20
 
 transfer_infect={}      # monitors the infected tranferred b/w nodes
-G=nx.Graph()
+G=nx.DiGraph()
 spam=0
-max_size=100        # choose even
+max_size=250        # choose even
 
 def spawn_cluster(t,n):
     " Spawn a new object of class cluster"
@@ -38,9 +40,7 @@ def spawn_cluster(t,n):
     
     list(G.nodes)[n].initialise()
     
-    #global spam
-    #spam+=1
-
+    
 
 
 
@@ -49,7 +49,7 @@ class Cluster:
     " This creates a lattice of random size (m*n) which models any population cluster: big, small, cities, villages, etc."
     
     
-    L=20       # Lifetime params
+    
     
     
     
@@ -61,11 +61,16 @@ class Cluster:
     total_sick_series=np.zeros(max_timescale)     # Global sick series!
     cluster_health=np.zeros(max_clusters)       # 0-> infection starts & is ongoing, 1->infection over!
     
+    cluster_born=np.zeros(max_clusters)     # Stores t_gen for every cluster
+    cluster_n=np.zeros(max_clusters)        # Stores n_clusters corresponding to t_gen
     
-    def __init__(self, length, width, time_steps, t_gen, density=uniform(0.4,0.6), Lifetime=20 ):
+    def __init__(self, length, width, time_steps, t_gen, density=uniform(0.4,1.6), Lifetime=14 ):
         
         " Generating the length & width randomly helps to create diverse clusters in any random-walk"
         Cluster.n_clusters+=1
+        
+        Cluster.cluster_n[ Cluster.n_clusters-1 ]=Cluster.n_clusters
+        Cluster.cluster_born[ Cluster.n_clusters-1 ]=t_gen
         
         self.cluster_id=Cluster.n_clusters      # Each cluster has a cluster-id
         self.t_gen=t_gen        # time of generation of this cluster!
@@ -74,6 +79,7 @@ class Cluster:
         
         self.m=length     # self?: Do length & breadth interest us?
         self.n=width
+        self.L=Lifetime
         
         self.N=self.m*self.n      # Lattice size
         self.density=density       # Density per node!
@@ -110,11 +116,14 @@ class Cluster:
         
         
         #? Should walker be a different class?
-        #? No, a walker is selfless, and for the lattice[We are not interested in individuals!]
-        self.x, self.y=np.zeros(self.W), np.zeros(self.W)    # walker x,y coord
-        self.infect=np.zeros(self.W)              # walker health status
-        self.lifespan=self.L*np.ones(self.W)            # Time left to live
+         
+        #No, a walker is selfless, and for the lattice[We are not interested in individuals!]
+        self.x, self.y= [] , []    # walker x,y coord
+                  
+        self.infect=[]      # walker health status
+        self.lifespan=[]            # Time left to live
         self.ts_sick=np.zeros(time_steps)      # time series of sick walkers
+        
         #ts_dead=np.zeros(max_iter)
         
         
@@ -126,9 +135,12 @@ class Cluster:
         "Place walkers on lattice"
         #print(self.nodes)     
         for j in range(self.W):                   
-            self.x[j] , self.y[j]= self.nodes[randrange(len(self.nodes))]
-            #print(self.Lat.nodes[ (self.x[j],self.y[j]) ]['walkers']   )
-            #print(( self.x[j] , self.y[j] ))
+            x_ , y_  = self.nodes[randrange(len(self.nodes))]
+            self.x.append(x_) 
+            self.y.append(y_) 
+            self.infect.append(0)
+            self.lifespan.append(self.L)
+            
             self.Lat.nodes[ (self.x[j],self.y[j]) ]['walkers'].append(j)       # add this walker at node
             
             
@@ -165,17 +177,31 @@ class Cluster:
             transfer_infect[ list(G.nodes)[self.cluster_id-1], list(G.nodes)[where-1] ]=0
                 
         else:
-            #if( not(G.has_edge(list(G.nodes)[self.cluster_id-1],list(G.nodes)[where-1]) ) ):
-            G.add_edge( list(G.nodes)[self.cluster_id-1], list(G.nodes)[where-1] )
+            if( not(G.has_edge(list(G.nodes)[self.cluster_id-1],list(G.nodes)[where-1]) ) ):
+                G.add_edge( list(G.nodes)[self.cluster_id-1], list(G.nodes)[where-1] )
             if (self.infect[j]==1):     # sick!
-                transfer_infect[ list(G.nodes)[self.cluster_id-1], list(G.nodes)[where-1] ]+=1
+                #transfer_infect[ list(G.nodes)[self.cluster_id-1], list(G.nodes)[where-1] ]+=1
+                pass
+        
+        node_=list(G.nodes)[where-1]
            
-        list(G.nodes)[where-1].Lat.nodes[ list(G.nodes)[where-1].exit_node ]['walkers'].append(j)     # Can duplicate id's exist!?   
+        node_.Lat.nodes[ node_.exit_node ]['infected']+=1       
+        # Okay! Give him a new identity!!!
+        node_.W+=1
+        node_.Lat.nodes[ node_.exit_node ]['walkers'].append(node_.W-1)     
+        node_.infect.append(self.infect[j])
+        node_.lifespan.append(self.lifespan[j])
+        x_,y_=node_.exit_node
+        node_.x.append(x_)
+        node_.y.append(y_)
         
-        
+        if (self.infect[j]==1):     # sick!
+            self.sick-=1
+            node_.sick+=1
         self.infect[j]=3    # Removed from this cluster!
         
     def walk(self,j):         
+        
         "Walk the walker to a new location"
             
         for i in self.Lat.neighbors( (self.x[j],self.y[j]) ):
@@ -216,8 +242,6 @@ class Cluster:
     def actions(self,j):
         "To infect or to kill!?"
     
-        if self.infect[j]<2:     #still alive
-            self.walk(j)
             
         if self.infect[j]==1:    #sick
             self.lifespan[j]-=1
@@ -235,6 +259,10 @@ class Cluster:
                     Cluster.total_sick+=1
                     
                     self.Lat.nodes[(self.x[j],self.y[j])]['infected']+=1
+                    
+        if self.infect[j]<2:     #still alive
+            self.walk(j)
+        
                         
                         
                         
@@ -257,6 +285,7 @@ class Cluster:
         
         if(Cluster.cluster_health[self.cluster_id-1]==1):
             return
+        
         for j in range(0,self.W):
         
             self.actions(j)
@@ -277,9 +306,21 @@ class Cluster:
     def plot(self): # You might want to mod this!
         " Plot each cluster data"
         
-        #self.figure=plt.figure()
         x=np.array(range(0,self.t_p))+self.t_gen
         y=np.array(self.ts_sick[0:self.t_p])
+        
+        
+        #l1=nx.get_node_attributes(self.Lat,'infected')
+        #ls1 = [ f'{key} : {l1[key]}' for key in l1 ]
+        # write string one by one adding newline
+        #with open(r"/home/paul/Documents/COVID/Networks/dump_infected"+str(self.cluster_id)+".txt", 'w') as my_file:
+            #[ my_file.write(f'{st}\n') for st in ls1 ]
+        
+        #l2=nx.get_node_attributes(self.Lat,'walkers')
+        #ls2 = [ f'{key} : {l2[key]}' for key in l2 ]
+        #with open(r"/home/paul/Documents/COVID/Networks/dump_walkers"+str(self.cluster_id)+".txt", 'w') as my_fil:
+            #[ my_fil.write(f'{st}\n') for st in ls2 ]
+        
         
         plt.plot(x,y)
         #plt.plot(range(0,iterate+10),ts_dead[0:iterate+10])
@@ -309,6 +350,15 @@ class Cluster:
         plt.title("Global data")
         savefig("/home/paul/Documents/COVID/Networks/Global.png",dpi=400)
         plt.clf()
+        
+    def rate_clustering():
+        
+        plt.ylabel('Number of clusters')
+        plt.xlabel('Time')
+        
+        plt.scatter(Cluster.cluster_born[0:Cluster.n_clusters] , Cluster.cluster_n[0:Cluster.n_clusters])
+        savefig("/home/paul/Documents/COVID/Networks/rate.png",dpi=400)
+        plt.clf()
 
 
 t=0
@@ -325,14 +375,17 @@ while(Cluster.total_sick>0 and t<max_timescale):
     
     t+=1
 
-for i in range(Cluster.n_clusters):
-   
-    list(G.nodes)[i].plot()
+#for i in range(Cluster.n_clusters):
+    # If the infection gets over, it'll automatically plot!
+    # Else plot manually!
+    #list(G.nodes)[i].plot()
     
 Cluster.global_plot(t) 
-
+Cluster.rate_clustering()
 #nx.set_edge_attributes(G,transfer_infect)
-print(transfer_infect)
+
+#print(transfer_infect)
+
 nx.draw(G)
 savefig("/home/paul/Documents/COVID/Networks/Global_network.png",dpi=400)
 
